@@ -19,10 +19,11 @@
 <p id='motion'>Motion: </p>
 <p id='threshold'>Threshold: </p>
 
-<button id='grant_permission'>授权</button>
+<button id='grant_permission'>Grant Permission</button>
 
 <script>
-let x, y, z, threshold = 5, last_x = 0, last_y = 0, last_z = 0;
+let display_x = 0, display_y = 0, display_z = 0, threshold = 15;
+let last_x = 0, last_y = 0, last_z = 0;
 
 function detect_swing(x, y, z) {
   var diff_x = Math.abs(last_x - x);
@@ -56,19 +57,23 @@ document.getElementById('grant_permission').onclick = function() {
   }
 
   function motion(event) {
-    x = event.accelerationIncludingGravity.x.toFixed(2);
-    y = event.accelerationIncludingGravity.y.toFixed(2);
-    z = event.accelerationIncludingGravity.z.toFixed(2);
+    let x = event.accelerationIncludingGravity.x.toFixed(2);
+    let y = event.accelerationIncludingGravity.y.toFixed(2);
+    let z = event.accelerationIncludingGravity.z.toFixed(2);
     
     if (detect_swing(x, y, z)) {
       document.getElementById('motion').innerHTML = 'Motion: Swing Detected!';
     }
+
+    display_x = x;
+    display_y = y;
+    display_z = z;
   }
   
   setInterval(function(){
-    document.getElementById('x').innerHTML = 'X: ' + x;
-    document.getElementById('y').innerHTML = 'Y: ' + y;
-    document.getElementById('z').innerHTML = 'Z: ' + z;
+    document.getElementById('x').innerHTML = 'X: ' + display_x;
+    document.getElementById('y').innerHTML = 'Y: ' + display_y;
+    document.getElementById('z').innerHTML = 'Z: ' + display_z;
   }, 1000);
 }
 </script>
