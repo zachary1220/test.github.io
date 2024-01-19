@@ -1,3 +1,28 @@
+<!DOCTYPE html>
 <html>
-  hello
+<head>
+  <title>Motion Detection</title>
+  <style>
+    #arrow {
+      font-size: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div id="arrow"></div>
+  <script>
+    window.addEventListener('devicemotion', function(event) {
+      var ax = event.accelerationIncludingGravity.x;
+
+      var arrow = document.getElementById('arrow');
+      if(ax > 1){
+        // 挥动手机向左
+        arrow.innerHTML = '←';
+      } else if(ax < -1){
+        // 挥动手机向右
+        arrow.innerHTML = '→';
+      }
+  });
+  </script>
+</body>
 </html>
