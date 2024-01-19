@@ -8,12 +8,13 @@
   <p>Y: <span id="yVal">0</span></p>
   <p>Z: <span id="zVal">0</span></p>
   <p>Composite Acceleration: <span id="cVal">0</span></p>
-  <p>Status: <span id="status">N/A</span></p>
+  <p>Status: <span id="status">Stationary</span></p>
   <p>Acceleration Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
   <p>Time Threshold (seconds): <input type="range" min="0" max="10" value="2" id="timeThreshold" step="0.1"><span id="timeThresholdVal">2</span></p>
   <button id="requestButton">Request Permission</button>
   <p>Status history:</p>
-  <div id="statusHistory" style="height: 100px; overflow: auto; border: 1px solid;"></div>
+  <div id="statusHistory" style="height: 500px; overflow: auto; border: 1px solid;"></div>
+
   <script>
     const xVal = document.getElementById("xVal");
     const yVal = document.getElementById("yVal");
@@ -27,7 +28,7 @@
     const requestButton = document.getElementById("requestButton");
     const statusHistory = document.getElementById("statusHistory");
 
-    let stationaryStartTime = null;
+    let lastMotionTime = null;
 
     thresholdSlider.addEventListener('input', function() {
       thresholdVal.textContent = thresholdSlider.value;
@@ -43,39 +44,41 @@
 
     function requestAccess() {
       if (typeof DeviceMotionEvent.requestPermission === 'function') {
-        DeviceMotionEvent.requestPermission()
-        .then(permissionState => {
+        DeviceMotionEvent.requestPermission().then(permissionState => {
           if (permissionState === 'granted') {
             window.addEventListener("devicemotion", function(event) {
               xVal.textContent = event.acceleration.x;
               yVal.textContent = event.acceleration.y;
               zVal.textContent = event.acceleration.z;
+
               const compositeAcceleration = getCompositeAcceleration(event.acceleration.x, event.acceleration.y, event.acceleration.z);
               cVal.textContent = compositeAcceleration;
-              let newStatus;
               
-              const now = Date.now();
-              if (compositeAcceleration < thresholdSlider.value) {
-                if (stationaryStartTime === null) {
-                  stationaryStartTime = now;
-                } else if (now - stationaryStartTime >= timeThresholdSlider.value * 1000) {
-                  newStatus = "Stationary";
-                }
-              } else {
-                stationaryStartTime = null; 
-                newStatus = "In Motion";
+              let newStatus = compositeAcceleration < thresholdSlider.value ? "Stationary" : "In Motion";
+
+              // If it stays stationary for more than the timeThreshold value, then reset lastMotionTime.
+              if (newStatus === "Stationary" && lastMotionTime && Date.now() - lastMotionTime >= timeThresholdSlider.value * 1000) {
+                lastMotionTime = null;
               }
-              if(newStatus && newStatus !== status.textContent) {
+
+              // If it's "in motion" and the last status was different, then record the motion time.
+              if (newStatus === "In Motion" && newStatus !== status.textContent) {
+                lastMotionTime = Date.now();
+              }
+
+              if (newStatus !== status.textContent || (newStatus === "In Motion" && Date.now() - lastMotionTime >= timeThresholdSlider.value * 1000)) {
                 const timestamp = new Date().toLocaleTimeString();
+                const historyRecordText = newStatus === "In Motion"
+                  ? `${timestamp} - Status changed to ${newStatus}, composite acceleration is ${compositeAcceleration}` 
+                  : `${timestamp} - Status changed to ${newStatus}`;
                 const historyRecord = document.createElement("p");
-                historyRecord.textContent = `${timestamp} - Status changed to ${newStatus}`;
+                historyRecord.textContent = historyRecordText;
                 statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
                 status.textContent = newStatus;
               }
             });
           }
-        })
-        .catch(console.error);
+        }).catch(console.error);
       } else {
         // handle regular non iOS 13+ devices
       }
