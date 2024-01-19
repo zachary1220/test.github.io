@@ -9,7 +9,7 @@
     <p>Z: <span id="zVal">0</span></p>
     <p>Status: <span id="status">N/A</span></p>
     <p>Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
-
+    <button id="requestButton">Request Permission</button>
 
     <script>
       const xVal = document.getElementById("xVal");
@@ -18,6 +18,7 @@
       const status = document.getElementById("status");
       const thresholdSlider = document.getElementById("threshold");
       const thresholdVal = document.getElementById("thresholdVal");
+      const requestButton = document.getElementById("requestButton");
 
       thresholdSlider.addEventListener('input', function() {
         thresholdVal.textContent = thresholdSlider.value;
@@ -30,16 +31,30 @@
         return false;
       }
 
-      window.addEventListener("devicemotion", function(event) {
-        xVal.textContent = event.accelerationIncludingGravity.x;
-        yVal.textContent = event.accelerationIncludingGravity.y;
-        zVal.textContent = event.accelerationIncludingGravity.z;
-        if (isStationary(event.accelerationIncludingGravity.x, event.accelerationIncludingGravity.y, event.accelerationIncludingGravity.z, thresholdSlider.value)) {
-          status.textContent = "Stationary";
+      function requestAccess() {
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+          DeviceMotionEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener("devicemotion", function(event) {
+                xVal.textContent = event.accelerationIncludingGravity.x;
+                yVal.textContent = event.accelerationIncludingGravity.y;
+                zVal.textContent = event.accelerationIncludingGravity.z;
+                if (isStationary(event.accelerationIncludingGravity.x, event.accelerationIncludingGravity.y, event.accelerationIncludingGravity.z, thresholdSlider.value)) {
+                  status.textContent = "Stationary";
+                } else {
+                  status.textContent = "In Motion";
+                }
+              });
+            }
+          })
+          .catch(console.error);
         } else {
-          status.textContent = "In Motion";
+          // handle regular non iOS 13+ devices
         }
-      });
+      }
+
+      requestButton.addEventListener('click', requestAccess);
     </script>
   </body>
 </html>
