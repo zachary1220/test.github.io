@@ -20,6 +20,7 @@
 <button id='grant_permission'>Grant Permission</button>
 
 <script>
+let x, y, z;
 document.getElementById('grant_permission').onclick = function() {
   if (typeof DeviceMotionEvent.requestPermission === 'function') {
     DeviceMotionEvent.requestPermission()
@@ -34,10 +35,16 @@ document.getElementById('grant_permission').onclick = function() {
   }
 
   function motion(event) {
-    document.getElementById('x').innerHTML = 'X: ' + event.acceleration.x.toFixed(2);
-    document.getElementById('y').innerHTML = 'Y: ' + event.acceleration.y.toFixed(2);
-    document.getElementById('z').innerHTML = 'Z: ' + event.acceleration.z.toFixed(2);
+    x = event.accelerationIncludingGravity.x.toFixed(2);
+    y = event.accelerationIncludingGravity.y.toFixed(2);
+    z = event.accelerationIncludingGravity.z.toFixed(2);
   }
+  
+  setInterval(function(){
+    document.getElementById('x').innerHTML = 'X: ' + x;
+    document.getElementById('y').innerHTML = 'Y: ' + y;
+    document.getElementById('z').innerHTML = 'Z: ' + z;
+  }, 1000);
 }
 </script>
 
