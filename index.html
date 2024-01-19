@@ -1,123 +1,45 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>Accelerometer Data</title>
-<style>
-  #grant_permission{
-    padding: 20px;
-    font-size: 30px;
-  }
-</style>
-</head>
+  <head>
+    <title>Device Motion</title>
+  </head>
+  <body>
+    <p>X: <span id="xVal">0</span></p>
+    <p>Y: <span id="yVal">0</span></p>
+    <p>Z: <span id="zVal">0</span></p>
+    <p>Status: <span id="status">N/A</span></p>
+    <p>Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
 
-<body>
-<h2>Accelerometer Data</h2>
 
-<p id='x'>X: </p>
-<p id='y'>Y: </p>
-<p id='z'>Z: </p>
-<p id='motion'>Motion: </p>
-<p id='direction'>Direction: </p>
-<p id='threshold'>Threshold: </p>
-<p id='duration'>Duration: </p>
-<p id='count'>Count: </p>
+    <script>
+      const xVal = document.getElementById("xVal");
+      const yVal = document.getElementById("yVal");
+      const zVal = document.getElementById("zVal");
+      const status = document.getElementById("status");
+      const thresholdSlider = document.getElementById("threshold");
+      const thresholdVal = document.getElementById("thresholdVal");
 
-<button id='grant_permission'>Grant Permission</button>
+      thresholdSlider.addEventListener('input', function() {
+        thresholdVal.textContent = thresholdSlider.value;
+      });
 
-<script>
-let display_x = 0, display_y = 0, display_z = 0;
-let last_x = 0, last_y = 0, last_z = 0;
-let threshold = 3;
-let timeThreshold = 0;  // 200ms
-let lastTime = 0;
-let swingStartTime = 0;
-let count = 0;
-let countTimeThreshold = 100;  // 100ms
-let lastCountTime = 0;
-let countStartTime = 0;
-
-function detect_swing(x, y, z, currentTime) {
-  var diff_x = x - last_x;
-  var diff_y = y - last_y;
-  var diff_z = z - last_z;
-
-  last_x = x;
-  last_y = y;
-  last_z = z;
-  
-  var max_diff = Math.max(Math.abs(diff_x), Math.abs(diff_y), Math.abs(diff_z));
-    
-  if (max_diff > threshold && (currentTime - lastTime > timeThreshold)) {
-    lastTime = currentTime;
-
-    // Swing duration
-    var duration = currentTime - swingStartTime;
-    document.getElementById('duration').innerHTML = 'Duration: ' + duration + 'ms';
-
-    // Reset the time when the swing starts
-    swingStartTime = currentTime;
-
-    // Tracking count for swings detected in past 100ms
-    if (currentTime - countStartTime < countTimeThreshold) {
-      count++;
-    } else {
-      count = 1;
-      countStartTime = currentTime;
-    }
-    document.getElementById('count').innerHTML = 'Count past 100ms: ' + count;
-
-    document.getElementById('threshold').innerHTML = 'Threshold: ' + max_diff;
-    return [true, diff_x];
-  }
-  return [false, 0];
-}
-
-document.getElementById('grant_permission').onclick = function() {
-  if (typeof DeviceMotionEvent.requestPermission === 'function') {
-    DeviceMotionEvent.requestPermission()
-    .then(permissionState => {
-      if (permissionState === 'granted') {
-        window.addEventListener('devicemotion', function(event){
-          motion(event);
-          lastTime = new Date().getTime();
-        }, false);
+      function isStationary(x, y, z, threshold) {
+        if ((Math.abs(x) < threshold) && (Math.abs(y) < threshold) && (Math.abs(z) < threshold)) {
+          return true;
+        }
+        return false;
       }
-    })
-    .catch(console.error);
-  } else {
-    // handle regular non iOS 14+ devices
-    window.addEventListener('devicemotion', function(event){
-      motion(event);
-      lastTime = new Date().getTime();
-    }, false); 
-  }
 
-  function motion(event) {
-    let x = event.accelerationIncludingGravity.x.toFixed(2);
-    let y = event.accelerationIncludingGravity.y.toFixed(2);
-    let z = event.accelerationIncludingGravity.z.toFixed(2);
-    
-    let currentTime = new Date().getTime();
-    
-    let [isSwinging, direction] = detect_swing(x, y, z, currentTime);
-    
-    if (isSwinging) {
-      document.getElementById('motion').innerHTML = 'Motion: Swing Detected!';
-      document.getElementById('direction').innerHTML = 'Direction: ' + (direction > 0 ? 'Left to Right' : 'Right to Left');
-    }
-
-    display_x = x;
-    display_y = y;
-    display_z = z;
-  }
-  
-  setInterval(function(){
-    document.getElementById('x').innerHTML = 'X: ' + display_x;
-    document.getElementById('y').innerHTML = 'Y: ' + display_y;
-    document.getElementById('z').innerHTML = 'Z: ' + display_z;
-  }, 1000);
-}
-</script>
-
-</body>
+      window.addEventListener("devicemotion", function(event) {
+        xVal.textContent = event.accelerationIncludingGravity.x;
+        yVal.textContent = event.accelerationIncludingGravity.y;
+        zVal.textContent = event.accelerationIncludingGravity.z;
+        if (isStationary(event.accelerationIncludingGravity.x, event.accelerationIncludingGravity.y, event.accelerationIncludingGravity.z, thresholdSlider.value)) {
+          status.textContent = "Stationary";
+        } else {
+          status.textContent = "In Motion";
+        }
+      });
+    </script>
+  </body>
 </html>
