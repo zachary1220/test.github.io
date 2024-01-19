@@ -4,17 +4,39 @@
   <title>Motion Detection</title>
   <style>
     #arrow {
-      font-size: 100px;
+      font-size: 30px;
+    }
+    #info {
+      font-size: 20px;
     }
   </style>
 </head>
 <body>
   <div id="arrow"></div>
+  <div id="info"></div>
+  <button id="requestButton">Request Motion Access</button>
   <script>
-    window.addEventListener('devicemotion', function(event) {
-      var ax = event.accelerationIncludingGravity.x;
+    var arrow = document.getElementById('arrow');
+    var info = document.getElementById('info');
+    var requestButton = document.getElementById('requestButton');
 
-      var arrow = document.getElementById('arrow');
+    requestButton.addEventListener('click', function() {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+            window.addEventListener('devicemotion', deviceMotionHandler);
+          }
+        })
+        .catch(console.error);
+      } else {
+        // handle regular non iOS 13+ devices
+        window.addEventListener('devicemotion', deviceMotionHandler);
+      }
+    });
+
+    function deviceMotionHandler(event) {
+      var ax = event.accelerationIncludingGravity.x;
       if(ax > 1){
         // 挥动手机向左
         arrow.innerHTML = '←';
@@ -22,7 +44,9 @@
         // 挥动手机向右
         arrow.innerHTML = '→';
       }
-  });
+      // 显示设备在X轴方向的加速度
+      info.innerHTML = 'Acceleration on X-axis: ' + ax;
+    }
   </script>
 </body>
 </html>
