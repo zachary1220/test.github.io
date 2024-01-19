@@ -9,11 +9,11 @@
   <p>Z: <span id="zVal">0</span></p>
   <p>Composite Acceleration: <span id="cVal">0</span></p>
   <p>Status: <span id="status">N/A</span></p>
-  <p>Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
+  <p>Acceleration Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
+  <p>Time Threshold (seconds): <input type="range" min="0" max="10" value="2" id="timeThreshold" step="0.1"><span id="timeThresholdVal">2</span></p>
   <button id="requestButton">Request Permission</button>
   <p>Status history:</p>
-  <textarea id="statusHistory" readonly rows="4"></textarea>
-
+  <div id="statusHistory" style="height: 100px; overflow: auto; border: 1px solid;"></div>
   <script>
     const xVal = document.getElementById("xVal");
     const yVal = document.getElementById("yVal");
@@ -22,11 +22,19 @@
     const status = document.getElementById("status");
     const thresholdSlider = document.getElementById("threshold");
     const thresholdVal = document.getElementById("thresholdVal");
+    const timeThresholdSlider = document.getElementById("timeThreshold");
+    const timeThresholdVal = document.getElementById("timeThresholdVal");
     const requestButton = document.getElementById("requestButton");
     const statusHistory = document.getElementById("statusHistory");
 
+    let stationaryStartTime = null;
+
     thresholdSlider.addEventListener('input', function() {
       thresholdVal.textContent = thresholdSlider.value;
+    });
+
+    timeThresholdSlider.addEventListener('input', function() {
+      timeThresholdVal.textContent = timeThresholdSlider.value;
     });
 
     function getCompositeAcceleration(x, y, z) {
@@ -45,16 +53,25 @@
               const compositeAcceleration = getCompositeAcceleration(event.acceleration.x, event.acceleration.y, event.acceleration.z);
               cVal.textContent = compositeAcceleration;
               let newStatus;
+              
+              const now = Date.now();
               if (compositeAcceleration < thresholdSlider.value) {
-                newStatus = "Stationary";
+                if (stationaryStartTime === null) {
+                  stationaryStartTime = now;
+                } else if (now - stationaryStartTime >= timeThresholdSlider.value * 1000) {
+                  newStatus = "Stationary";
+                }
               } else {
+                stationaryStartTime = null; 
                 newStatus = "In Motion";
               }
-              if(newStatus !== status.textContent) {
+              if(newStatus && newStatus !== status.textContent) {
                 const timestamp = new Date().toLocaleTimeString();
-                statusHistory.value += `${timestamp} - Status changed to ${newStatus}\n`;
+                const historyRecord = document.createElement("p");
+                historyRecord.textContent = `${timestamp} - Status changed to ${newStatus}`;
+                statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
+                status.textContent = newStatus;
               }
-              status.textContent = newStatus;
             });
           }
         })
