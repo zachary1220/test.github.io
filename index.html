@@ -17,30 +17,45 @@
 <p id='y'>Y: </p>
 <p id='z'>Z: </p>
 <p id='motion'>Motion: </p>
+<p id='direction'>Direction: </p>
 <p id='threshold'>Threshold: </p>
+<p id='duration'>Duration: </p>
 
-<button id='grant_permission'>授权</button>
+<button id='grant_permission'>授权吧</button>
 
 <script>
-let display_x = 0, display_y = 0, display_z = 0, threshold = 3.5;
+let display_x = 0, display_y = 0, display_z = 0;
 let last_x = 0, last_y = 0, last_z = 0;
+let threshold = 15;
+let timeThreshold = 200;  // 200ms
+let lastTime = 0;
+let swingStartTime = 0;
 
-function detect_swing(x, y, z) {
-  var diff_x = Math.abs(last_x - x);
-  var diff_y = Math.abs(last_y - y);
-  var diff_z = Math.abs(last_z - z);
+function detect_swing(x, y, z, currentTime) {
+  var diff_x = x - last_x;
+  var diff_y = y - last_y;
+  var diff_z = z - last_z;
 
   last_x = x;
   last_y = y;
   last_z = z;
   
-  var max_diff = Math.max(diff_x, diff_y, diff_z);
+  var max_diff = Math.max(Math.abs(diff_x), Math.abs(diff_y), Math.abs(diff_z));
+    
+  if (max_diff > threshold && (currentTime - lastTime > timeThreshold)) {
+    lastTime = currentTime;
 
-  if (max_diff > threshold) {
+    // Swing duration
+    var duration = currentTime - swingStartTime;
+    document.getElementById('duration').innerHTML = 'Duration: ' + duration + 'ms';
+
+    // Reset the time when the swing starts
+    swingStartTime = currentTime;
+
     document.getElementById('threshold').innerHTML = 'Threshold: ' + max_diff;
-    return true;
+    return [true, diff_x];
   }
-  return false;
+  return [false, 0];
 }
 
 document.getElementById('grant_permission').onclick = function() {
@@ -48,12 +63,19 @@ document.getElementById('grant_permission').onclick = function() {
     DeviceMotionEvent.requestPermission()
     .then(permissionState => {
       if (permissionState === 'granted') {
-        window.addEventListener('devicemotion', motion, false);
+        window.addEventListener('devicemotion', function(event){
+          motion(event);
+          lastTime = new Date().getTime();
+        }, false);
       }
     })
     .catch(console.error);
   } else {
-    window.addEventListener('devicemotion', motion, false); // handle regular non iOS 13+ devices
+    // handle regular non iOS 14+ devices
+    window.addEventListener('devicemotion', function(event){
+      motion(event);
+      lastTime = new Date().getTime();
+    }, false); 
   }
 
   function motion(event) {
@@ -61,8 +83,13 @@ document.getElementById('grant_permission').onclick = function() {
     let y = event.accelerationIncludingGravity.y.toFixed(2);
     let z = event.accelerationIncludingGravity.z.toFixed(2);
     
-    if (detect_swing(x, y, z)) {
+    let currentTime = new Date().getTime();
+    
+    let [isSwinging, direction] = detect_swing(x, y, z, currentTime);
+    
+    if (isSwinging) {
       document.getElementById('motion').innerHTML = 'Motion: Swing Detected!';
+      document.getElementById('direction').innerHTML = "Direction: " + (direction > 0 ? "Left to Right" : "Right to Left");
     }
 
     display_x = x;
