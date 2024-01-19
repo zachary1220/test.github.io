@@ -11,6 +11,8 @@
   <p>Status: <span id="status">N/A</span></p>
   <p>Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
   <button id="requestButton">Request Permission</button>
+  <p>Status history:</p>
+  <textarea id="statusHistory" readonly rows="4"></textarea>
 
   <script>
     const xVal = document.getElementById("xVal");
@@ -21,6 +23,7 @@
     const thresholdSlider = document.getElementById("threshold");
     const thresholdVal = document.getElementById("thresholdVal");
     const requestButton = document.getElementById("requestButton");
+    const statusHistory = document.getElementById("statusHistory");
 
     thresholdSlider.addEventListener('input', function() {
       thresholdVal.textContent = thresholdSlider.value;
@@ -41,11 +44,17 @@
               zVal.textContent = event.acceleration.z;
               const compositeAcceleration = getCompositeAcceleration(event.acceleration.x, event.acceleration.y, event.acceleration.z);
               cVal.textContent = compositeAcceleration;
+              let newStatus;
               if (compositeAcceleration < thresholdSlider.value) {
-                status.textContent = "Stationary";
+                newStatus = "Stationary";
               } else {
-                status.textContent = "In Motion";
+                newStatus = "In Motion";
               }
+              if(newStatus !== status.textContent) {
+                const timestamp = new Date().toLocaleTimeString();
+                statusHistory.value += `${timestamp} - Status changed to ${newStatus}\n`;
+              }
+              status.textContent = newStatus;
             });
           }
         })
