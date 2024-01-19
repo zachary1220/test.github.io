@@ -16,11 +16,32 @@
 <p id='x'>X: </p>
 <p id='y'>Y: </p>
 <p id='z'>Z: </p>
+<p id='motion'>Motion: </p>
+<p id='threshold'>Threshold: </p>
 
-<button id='grant_permission'>Grant Permission</button>
+<button id='grant_permission'>授权</button>
 
 <script>
-let x, y, z;
+let x, y, z, threshold = 5, last_x = 0, last_y = 0, last_z = 0;
+
+function detect_swing(x, y, z) {
+  var diff_x = Math.abs(last_x - x);
+  var diff_y = Math.abs(last_y - y);
+  var diff_z = Math.abs(last_z - z);
+
+  last_x = x;
+  last_y = y;
+  last_z = z;
+  
+  var max_diff = Math.max(diff_x, diff_y, diff_z);
+
+  if (max_diff > threshold) {
+    document.getElementById('threshold').innerHTML = 'Threshold: ' + max_diff;
+    return true;
+  }
+  return false;
+}
+
 document.getElementById('grant_permission').onclick = function() {
   if (typeof DeviceMotionEvent.requestPermission === 'function') {
     DeviceMotionEvent.requestPermission()
@@ -38,6 +59,10 @@ document.getElementById('grant_permission').onclick = function() {
     x = event.accelerationIncludingGravity.x.toFixed(2);
     y = event.accelerationIncludingGravity.y.toFixed(2);
     z = event.accelerationIncludingGravity.z.toFixed(2);
+    
+    if (detect_swing(x, y, z)) {
+      document.getElementById('motion').innerHTML = 'Motion: Swing Detected!';
+    }
   }
   
   setInterval(function(){
