@@ -20,8 +20,9 @@
 <p id='direction'>Direction: </p>
 <p id='threshold'>Threshold: </p>
 <p id='duration'>Duration: </p>
+<p id='count'>Count: </p>
 
-<button id='grant_permission'>授权吧</button>
+<button id='grant_permission'>Grant Permission</button>
 
 <script>
 let display_x = 0, display_y = 0, display_z = 0;
@@ -30,6 +31,10 @@ let threshold = 3;
 let timeThreshold = 0;  // 200ms
 let lastTime = 0;
 let swingStartTime = 0;
+let count = 0;
+let countTimeThreshold = 100;  // 100ms
+let lastCountTime = 0;
+let countStartTime = 0;
 
 function detect_swing(x, y, z, currentTime) {
   var diff_x = x - last_x;
@@ -51,6 +56,15 @@ function detect_swing(x, y, z, currentTime) {
 
     // Reset the time when the swing starts
     swingStartTime = currentTime;
+
+    // Tracking count for swings detected in past 100ms
+    if (currentTime - countStartTime < countTimeThreshold) {
+      count++;
+    } else {
+      count = 1;
+      countStartTime = currentTime;
+    }
+    document.getElementById('count').innerHTML = 'Count past 100ms: ' + count;
 
     document.getElementById('threshold').innerHTML = 'Threshold: ' + max_diff;
     return [true, diff_x];
@@ -89,7 +103,7 @@ document.getElementById('grant_permission').onclick = function() {
     
     if (isSwinging) {
       document.getElementById('motion').innerHTML = 'Motion: Swing Detected!';
-      document.getElementById('direction').innerHTML = "Direction: " + (direction > 0 ? "Left to Right" : "Right to Left");
+      document.getElementById('direction').innerHTML = 'Direction: ' + (direction > 0 ? 'Left to Right' : 'Right to Left');
     }
 
     display_x = x;
