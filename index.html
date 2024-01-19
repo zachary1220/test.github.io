@@ -1,60 +1,61 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Device Motion</title>
-  </head>
-  <body>
-    <p>X: <span id="xVal">0</span></p>
-    <p>Y: <span id="yVal">0</span></p>
-    <p>Z: <span id="zVal">0</span></p>
-    <p>Status: <span id="status">N/A</span></p>
-    <p>Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
-    <button id="requestButton">Request Permission</button>
+<head>
+  <title>Device Motion</title>
+</head>
+<body>
+  <p>X: <span id="xVal">0</span></p>
+  <p>Y: <span id="yVal">0</span></p>
+  <p>Z: <span id="zVal">0</span></p>
+  <p>Composite Acceleration: <span id="cVal">0</span></p>
+  <p>Status: <span id="status">N/A</span></p>
+  <p>Threshold: <input type="range" min="0" max="10" value="0" id="threshold" step="0.1"><span id="thresholdVal">0</span></p>
+  <button id="requestButton">Request Permission</button>
 
-    <script>
-      const xVal = document.getElementById("xVal");
-      const yVal = document.getElementById("yVal");
-      const zVal = document.getElementById("zVal");
-      const status = document.getElementById("status");
-      const thresholdSlider = document.getElementById("threshold");
-      const thresholdVal = document.getElementById("thresholdVal");
-      const requestButton = document.getElementById("requestButton");
+  <script>
+    const xVal = document.getElementById("xVal");
+    const yVal = document.getElementById("yVal");
+    const zVal = document.getElementById("zVal");
+    const cVal = document.getElementById("cVal");
+    const status = document.getElementById("status");
+    const thresholdSlider = document.getElementById("threshold");
+    const thresholdVal = document.getElementById("thresholdVal");
+    const requestButton = document.getElementById("requestButton");
 
-      thresholdSlider.addEventListener('input', function() {
-        thresholdVal.textContent = thresholdSlider.value;
-      });
+    thresholdSlider.addEventListener('input', function() {
+      thresholdVal.textContent = thresholdSlider.value;
+    });
 
-      function isStationary(x, y, z, threshold) {
-        if ((Math.abs(x) < threshold) && (Math.abs(y) < threshold) && (Math.abs(z) < threshold)) {
-          return true;
-        }
-        return false;
+    function getCompositeAcceleration(x, y, z) {
+      return Math.sqrt(x * x + y * y + z * z);
+    }
+
+    function requestAccess() {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+            window.addEventListener("devicemotion", function(event) {
+              xVal.textContent = event.acceleration.x;
+              yVal.textContent = event.acceleration.y;
+              zVal.textContent = event.acceleration.z;
+              const compositeAcceleration = getCompositeAcceleration(event.acceleration.x, event.acceleration.y, event.acceleration.z);
+              cVal.textContent = compositeAcceleration;
+              if (compositeAcceleration < thresholdSlider.value) {
+                status.textContent = "Stationary";
+              } else {
+                status.textContent = "In Motion";
+              }
+            });
+          }
+        })
+        .catch(console.error);
+      } else {
+        // handle regular non iOS 13+ devices
       }
+    }
 
-      function requestAccess() {
-        if (typeof DeviceMotionEvent.requestPermission === 'function') {
-          DeviceMotionEvent.requestPermission()
-          .then(permissionState => {
-            if (permissionState === 'granted') {
-              window.addEventListener("devicemotion", function(event) {
-                xVal.textContent = event.accelerationIncludingGravity.x;
-                yVal.textContent = event.accelerationIncludingGravity.y;
-                zVal.textContent = event.accelerationIncludingGravity.z;
-                if (isStationary(event.accelerationIncludingGravity.x, event.accelerationIncludingGravity.y, event.accelerationIncludingGravity.z, thresholdSlider.value)) {
-                  status.textContent = "Stationary";
-                } else {
-                  status.textContent = "In Motion";
-                }
-              });
-            }
-          })
-          .catch(console.error);
-        } else {
-          // handle regular non iOS 13+ devices
-        }
-      }
-
-      requestButton.addEventListener('click', requestAccess);
-    </script>
-  </body>
+    requestButton.addEventListener('click', requestAccess);
+  </script>
+</body>
 </html>
