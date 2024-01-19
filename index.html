@@ -1,36 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Accelerometer Data</title>
+<title>Accelerometer Data</title>
+<style>
+  #grant_permission{
+    padding: 20px;
+    font-size: 30px;
+  }
+</style>
 </head>
-<body>
 
+<body>
 <h2>Accelerometer Data</h2>
 
 <p id='x'>X: </p>
 <p id='y'>Y: </p>
 <p id='z'>Z: </p>
 
-<button id='grant_permission' style='font-size: 30px; padding: 20px;'>Grant Permission</button>
+<button id='grant_permission'>Grant Permission</button>
 
 <script>
-
-document.getElementById('grant_permission').addEventListener('click', function() {
-
-    if (window.DeviceOrientationEvent) {
+document.getElementById('grant_permission').onclick = function() {
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission()
+    .then(permissionState => {
+      if (permissionState === 'granted') {
         window.addEventListener('devicemotion', motion, false);
-    } else {
-        alert('Sorry, your browser doesn't support DeviceOrientationEvent');
-    }
+      }
+    })
+    .catch(console.error);
+  } else {
+    window.addEventListener('devicemotion', motion, false); // handle regular non iOS 13+ devices
+  }
 
-});
-
-function motion(event) {
-    document.getElementById('x').innerHTML = `X: ${event.accelerationIncludingGravity.x.toFixed(3)}`;
-    document.getElementById('y').innerHTML = `Y: ${event.accelerationIncludingGravity.y.toFixed(3)}`;
-    document.getElementById('z').innerHTML = `Z: ${event.accelerationIncludingGravity.z.toFixed(3)}`;
+  function motion(event) {
+    document.getElementById('x').innerHTML = 'X: ' + event.acceleration.x.toFixed(2);
+    document.getElementById('y').innerHTML = 'Y: ' + event.acceleration.y.toFixed(2);
+    document.getElementById('z').innerHTML = 'Z: ' + event.acceleration.z.toFixed(2);
+  }
 }
-
 </script>
 
 </body>
