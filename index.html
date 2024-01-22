@@ -71,17 +71,27 @@
                 const now = Date.now();
                 if (compositeAcceleration < thresholdSlider.value) {
                   if (stationaryStartTime === null) {
-                    stationaryStartTime = now;
+                      stationaryStartTime = now;
                   }
                   if (now - stationaryStartTime >= timeThresholdSlider.value * 1000) {
-                    newStatus = "Stationary";
-                    if (firstInMotionAlpha !== null && lastInMotionAlpha !== null) {
-                      alphaDifference.textContent = `Alpha Difference: ${lastInMotionAlpha - firstInMotionAlpha}`;
-                      firstInMotionAlpha = null;
-                      lastInMotionAlpha = null;
-                    }
+                      newStatus = "Stationary";
+                      if (firstInMotionAlpha !== null &&
+                          lastInMotionAlpha !== null) {
+                          alphaDifference.textContent =
+                              `Alpha差值：${lastInMotionAlpha - firstInMotionAlpha}`;
+                          firstInMotionAlpha = null;
+                          lastInMotionAlpha = null;
+                      }
+                      if (newStatus != status.textContent) { // 此处添加了状态变化的检测
+                          const timestamp = new Date().toLocaleTimeString();
+                          const historyRecordText = `${timestamp} - 状态变为${newStatus}`;
+                          const historyRecord = document.createElement("p");
+                          historyRecord.textContent = historyRecordText;
+                          statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
+                          status.textContent = newStatus;
+                      }
                   }
-                } else {
+              } else {
                   stationaryStartTime = null;
                   newStatus = "In Motion";
                   if (status.textContent !== "In Motion") {
