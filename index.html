@@ -49,6 +49,15 @@
       timeThresholdVal.textContent = timeThresholdSlider.value;
     });
 
+    function changeBackgroundColor(delta) {
+      if (Math.abs(delta) > 45) {
+        document.body.style.backgroundColor = delta > 0 ? 'green' : 'red';
+        setTimeout(function() {
+          document.body.style.backgroundColor = '';
+        }, 2000);
+      }
+    }
+
     function getCompositeAcceleration(x, y, z) {
       return Math.sqrt(x * x + y * y + z * z);
     }
@@ -111,6 +120,8 @@
                   "N/A";
                   alphaDiff.textContent = alphaChanges;
                   motionRecords = [];
+                  
+                  changeBackgroundColor(alphaChanges); // 调用更改背景颜色的函数
                 }
               });
 
