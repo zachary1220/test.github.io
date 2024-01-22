@@ -14,7 +14,8 @@
   <p>Gamma: <span id="gammaVal">N/A</span></p>
   <p>Acceleration Threshold: <input type="range" min="0" max="30" value="10" id="threshold" step="1"><span id="thresholdVal">10</span></p>
   <p>Time Threshold (seconds): <input type="range" min="0" max="10" value="2" id="timeThreshold" step="0.5"><span id="timeThresholdVal">2</span></p>
-  <button id="requestButton">授权</button>
+  <button id="requestButton">Request Permission</button>
+  <div id="alphaDifference" style="text-align: center; font-size: 20px; font-weight: bold;"></div>
   <p>Status history:</p>
   <div id="statusHistory" style="height: 500px; overflow: auto; border: 1px solid;"></div>
 
@@ -33,11 +34,13 @@
     const timeThresholdVal = document.getElementById("timeThresholdVal");
     const requestButton = document.getElementById("requestButton");
     const statusHistory = document.getElementById("statusHistory");
+    const alphaDifference = document.getElementById("alphaDifference");
 
     let stationaryStartTime = null;
     let lastRecordedMotionTime = null;
     let deviceOrientation = {};
-    let motionBuffer = [];
+    let firstInMotionAlpha = null;
+    let lastInMotionAlpha = null;
 
     thresholdSlider.addEventListener('input', function() {
       thresholdVal.textContent = thresholdSlider.value;
@@ -72,35 +75,35 @@
                   }
                   if (now - stationaryStartTime >= timeThresholdSlider.value * 1000) {
                     newStatus = "Stationary";
+                    if (firstInMotionAlpha !== null && lastInMotionAlpha !== null) {
+                      alphaDifference.textContent = `Alpha Difference: ${lastInMotionAlpha - firstInMotionAlpha}`;
+                      firstInMotionAlpha = null;
+                      lastInMotionAlpha = null;
+                    }
                   }
-                } 
-                else {
-                  stationaryStartTime = null; 
+                } else {
+                  stationaryStartTime = null;
                   newStatus = "In Motion";
+                  if (status.textContent !== "In Motion") {
+                    firstInMotionAlpha = deviceOrientation.alpha;
+                  }
+                  lastInMotionAlpha = deviceOrientation.alpha;
                 }
 
-                // Record "In Motion" immediately when it exceeds the threshold:
+                let alphaDifference;
                 if (newStatus === "In Motion" && (status.textContent !== "In Motion" || now - lastRecordedMotionTime > 100 /* Record at max once per second */)) {
                   lastRecordedMotionTime = now;
                   const timestamp = new Date().toLocaleTimeString();
-                  motionBuffer.push(deviceOrientation.alpha);
-                  const historyRecordText = `${timestamp} - Status changed to ${newStatus}, composite acceleration is ${compositeAcceleration}, device orientation is alpha: ${deviceOrientation.alpha}, beta: ${deviceOrientation.beta}, gamma: ${deviceOrientation.gamma}`; 
+                  const historyRecordText = `${timestamp} - Status changed to ${newStatus}, alpha angle is: ${deviceOrientation.alpha}, composite acceleration is ${compositeAcceleration}`; 
                   const historyRecord = document.createElement("p");
                   historyRecord.textContent = historyRecordText;
                   statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
                   status.textContent = newStatus;
                 }
 
-                // Record "Stationary" only after it has been stationary for the time threshold value:
-                if(newStatus === "Stationary" && newStatus !== status.textContent) {
+                if (newStatus === "Stationary" && newStatus !== status.textContent) {
                   const timestamp = new Date().toLocaleTimeString();
-                  charlie
-                  var historyRecordText = `${timestamp} - Status changed to ${newStatus}, device orientation is alpha: ${deviceOrientation.alpha}, beta: ${deviceOrientation.beta}, gamma: ${deviceOrientation.gamma}`;
-                  if (motionBuffer.length > 1) {
-                    const alphaDifference = motionBuffer[motionBuffer.length - 1] - motionBuffer[0];
-                    historyRecordText += `, alpha angle difference is ${alphaDifference.toFixed(2)}`;
-                    motionBuffer = [];
-                  }
+                  const historyRecordText = `${timestamp} - Status changed to ${newStatus}`;
                   const historyRecord = document.createElement("p");
                   historyRecord.textContent = historyRecordText;
                   statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
@@ -108,7 +111,6 @@
                 }
               });
 
-              // Listen for device orientation:
               window.addEventListener("deviceorientation", function(event) {
                 alphaVal.textContent = event.alpha;
                 betaVal.textContent = event.beta;
