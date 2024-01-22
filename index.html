@@ -9,8 +9,11 @@
   <p>Z: <span id="zVal">0</span></p>
   <p>Composite Acceleration: <span id="cVal">0</span></p>
   <p>Status: <span id="status">N/A</span></p>
-  <p>Acceleration Threshold: <input type="range" min="0" max="10" value="5" id="threshold" step="0.1"><span id="thresholdVal">5</span></p>
-  <p>Time Threshold (seconds): <input type="range" min="0" max="10" value="2" id="timeThreshold" step="0.1"><span id="timeThresholdVal">2</span></p>
+  <p>Alpha: <span id="alphaVal">N/A</span></p>
+  <p>Beta: <span id="betaVal">N/A</span></p>
+  <p>Gamma: <span id="gammaVal">N/A</span></p>
+  <p>Acceleration Threshold: <input type="range" min="0" max="30" value="0" id="threshold" step="1"><span id="thresholdVal">10</span></p>
+  <p>Time Threshold (seconds): <input type="range" min="0" max="10" value="2" id="timeThreshold" step="0.5"><span id="timeThresholdVal">2</span></p>
   <button id="requestButton">Request Permission</button>
   <p>Status history:</p>
   <div id="statusHistory" style="height: 500px; overflow: auto; border: 1px solid;"></div>
@@ -21,6 +24,9 @@
     const zVal = document.getElementById("zVal");
     const cVal = document.getElementById("cVal");
     const status = document.getElementById("status");
+    const alphaVal = document.getElementById("alphaVal");
+    const betaVal = document.getElementById("betaVal");
+    const gammaVal = document.getElementById("gammaVal");
     const thresholdSlider = document.getElementById("threshold");
     const thresholdVal = document.getElementById("thresholdVal");
     const timeThresholdSlider = document.getElementById("timeThreshold");
@@ -30,6 +36,7 @@
 
     let stationaryStartTime = null;
     let lastRecordedMotionTime = null;
+    let deviceOrientation = {};
 
     thresholdSlider.addEventListener('input', function() {
       thresholdVal.textContent = thresholdSlider.value;
@@ -72,10 +79,10 @@
                 }
 
                 // Record "In Motion" immediately when it exceeds the threshold:
-                if (newStatus === "In Motion" && (status.textContent !== "In Motion" || now - lastRecordedMotionTime > 100 /* Record at max once per second */)) {
+                if (newStatus === "In Motion" && (status.textContent !== "In Motion" || now - lastRecordedMotionTime > 1000 /* Record at max once per second */)) {
                   lastRecordedMotionTime = now;
                   const timestamp = new Date().toLocaleTimeString();
-                  const historyRecordText = `${timestamp} - Status changed to ${newStatus}, composite acceleration is ${compositeAcceleration}`; 
+                  const historyRecordText = `${timestamp} - Status changed to ${newStatus}, composite acceleration is ${compositeAcceleration}, device orientation is alpha: ${deviceOrientation.alpha}, beta: ${deviceOrientation.beta}, gamma: ${deviceOrientation.gamma}`; 
                   const historyRecord = document.createElement("p");
                   historyRecord.textContent = historyRecordText;
                   statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
@@ -85,12 +92,24 @@
                 // Record "Stationary" only after it has been stationary for the time threshold value:
                 if(newStatus === "Stationary" && newStatus !== status.textContent) {
                   const timestamp = new Date().toLocaleTimeString();
-                  const historyRecordText = `${timestamp} - Status changed to ${newStatus}`;
+                  const historyRecordText = `${timestamp} - Status changed to ${newStatus}, device orientation is alpha: ${deviceOrientation.alpha}, beta: ${deviceOrientation.beta}, gamma: ${deviceOrientation.gamma}`;
                   const historyRecord = document.createElement("p");
                   historyRecord.textContent = historyRecordText;
                   statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
                   status.textContent = newStatus;
                 }
+              });
+
+              // Listen for device orientation:
+              window.addEventListener("deviceorientation", function(event) {
+                alphaVal.textContent = event.alpha;
+                betaVal.textContent = event.beta;
+                gammaVal.textContent = event.gamma;
+                deviceOrientation = {
+                  alpha: event.alpha,
+                  beta: event.beta,
+                  gamma: event.gamma,
+                };
               });
             }
           })
