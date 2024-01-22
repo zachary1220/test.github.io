@@ -74,22 +74,30 @@
                       stationaryStartTime = now;
                   }
                   if (now - stationaryStartTime >= timeThresholdSlider.value * 1000) {
-                      newStatus = "Stationary";
-                      if (firstInMotionAlpha !== null &&
-                          lastInMotionAlpha !== null) {
-                          alphaDifference.textContent =
-                              `Alpha差值：${lastInMotionAlpha - firstInMotionAlpha}`;
-                          firstInMotionAlpha = null;
-                          lastInMotionAlpha = null;
-                      }
-                      if (newStatus != status.textContent) { // 此处添加了状态变化的检测
-                          const timestamp = new Date().toLocaleTimeString();
-                          const historyRecordText = `${timestamp} - 状态变为${newStatus}`;
-                          const historyRecord = document.createElement("p");
-                          historyRecord.textContent = historyRecordText;
-                          statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
-                          status.textContent = newStatus;
-                      }
+                    newStatus = "Stationary";
+                    if (status.textContent != newStatus) { // 确保只有在状态变化时才更新“Status History”
+                        if (firstInMotionAlpha !== null &&
+                            lastInMotionAlpha !== null) {
+                            const timestamp = new Date().toLocaleTimeString();
+                            const alphaDif = lastInMotionAlpha - firstInMotionAlpha;
+                            alphaDifference.textContent = `Alpha差值：${alphaDif}`;
+                            let historyRecordText = `${timestamp} - 状态变为${newStatus}`;
+                            let historyRecord = document.createElement("p");
+                            historyRecord.textContent = historyRecordText;
+                            statusHistory.prepend(historyRecord); // 添加新状态到“Status History”中
+                            firstInMotionAlpha = null;
+                            lastInMotionAlpha = null;
+                        }
+                        status.textContent = newStatus;
+                    }
+                    if (newStatus != status.textContent) { // 此处添加了状态变化的检测
+                        const timestamp = new Date().toLocaleTimeString();
+                        const historyRecordText = `${timestamp} - 状态变为${newStatus}`;
+                        const historyRecord = document.createElement("p");
+                        historyRecord.textContent = historyRecordText;
+                        statusHistory.insertBefore(historyRecord, statusHistory.firstChild);
+                        status.textContent = newStatus;
+                    }
                   }
               } else {
                   stationaryStartTime = null;
