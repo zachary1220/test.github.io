@@ -79,7 +79,7 @@
                 }
 
                 // Record "In Motion" immediately when it exceeds the threshold:
-                if (newStatus === "In Motion" && (status.textContent !== "In Motion" || now - lastRecordedMotionTime > 1000 /* Record at max once per second */)) {
+                if (newStatus === "In Motion" && (status.textContent !== "In Motion" || now - lastRecordedMotionTime > 100 /* Record at max once per second */)) {
                   lastRecordedMotionTime = now;
                   const timestamp = new Date().toLocaleTimeString();
                   const historyRecordText = `${timestamp} - Status changed to ${newStatus}, composite acceleration is ${compositeAcceleration}, device orientation is alpha: ${deviceOrientation.alpha}, beta: ${deviceOrientation.beta}, gamma: ${deviceOrientation.gamma}`; 
